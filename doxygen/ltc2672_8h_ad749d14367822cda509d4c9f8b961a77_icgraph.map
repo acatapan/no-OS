@@ -1,0 +1,6 @@
+<map id="ltc2672_current_to_code" name="ltc2672_current_to_code">
+<area shape="rect" id="node1" title="get dac code value from current of a selected DAC channel" alt="" coords="412,46,593,73"/>
+<area shape="rect" id="node2" href="$ltc2672_8h.html#acfa646f3ce8bb1c108bd2b83b4b366bd" title="sets the same current for all channels" alt="" coords="213,5,364,47"/>
+<area shape="rect" id="node4" href="$ltc2672_8h.html#a2faeb0d278c1d336ac9ba332abb31e6e" title="set the current for a selected DAC channel" alt="" coords="213,71,364,112"/>
+<area shape="rect" id="node3" href="$dc2903a_2src_2examples_2basic__example_2basic__example_8c.html#a72943dc9011d36293cb05ca5d7cb6899" title="basic example main execution." alt="" coords="5,13,165,39"/>
+</map>
