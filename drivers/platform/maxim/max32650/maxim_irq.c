@@ -48,7 +48,9 @@
 #include "rtc.h"
 #include "uart.h"
 #include "tmr.h"
+#include "dma.h"
 #include "maxim_irq.h"
+#include "maxim_dma.h"
 #include "max32650.h"
 #include "no_os_uart.h"
 #include "no_os_util.h"
@@ -61,6 +63,8 @@ static struct event_list _events[] = {
 	[NO_OS_EVT_UART_ERROR] = {.event = NO_OS_EVT_UART_ERROR},
 	[NO_OS_EVT_RTC] = {.event = NO_OS_EVT_RTC},
 	[NO_OS_EVT_TIM_ELAPSED] = {.event = NO_OS_EVT_TIM_ELAPSED},
+	[NO_OS_EVT_DMA_RX_COMPLETE] = {.event = NO_OS_EVT_DMA_RX_COMPLETE},
+	[NO_OS_EVT_DMA_TX_COMPLETE] = {.event = NO_OS_EVT_DMA_TX_COMPLETE},
 };
 
 extern mxc_uart_req_t uart_irq_state[MXC_UART_INSTANCES];
@@ -184,6 +188,114 @@ void TMR2_IRQHandler()
 }
 #endif
 
+/**
+ * @brief DMA interupt callback
+ * @param ch_num - The DMA channel number for which the interrupt occured
+ */
+static void max_dma_handler(uint32_t ch_num)
+{
+	struct event_list *rx_evt_list = &_events[NO_OS_EVT_DMA_RX_COMPLETE];
+	struct event_list *tx_evt_list = &_events[NO_OS_EVT_DMA_TX_COMPLETE];
+	struct irq_action *rx_action, *tx_action;
+	struct irq_action key = {.irq_id = max_dma_get_irq(0, ch_num)};
+	int ret;
+
+	/* Clear the DMA interrupt flag */
+	MAX_DMA->ch[ch_num].st |= NO_OS_BIT(2);
+
+	if (rx_evt_list->actions) {
+		ret = no_os_list_read_find(rx_evt_list->actions, (void **)&rx_action, &key);
+		if (!ret && rx_action->callback)
+			rx_action->callback(rx_action->ctx);
+	}
+
+	if (tx_evt_list->actions) {
+		ret = no_os_list_read_find(tx_evt_list->actions, (void **)&tx_action, &key);
+		if (!ret && tx_action->callback)
+			tx_action->callback(tx_action->ctx);
+	}
+}
+
+void DMA0_IRQHandler()
+{
+	max_dma_handler(0);
+}
+
+void DMA1_IRQHandler()
+{
+	max_dma_handler(1);
+}
+
+void DMA2_IRQHandler()
+{
+	max_dma_handler(2);
+}
+
+void DMA3_IRQHandler()
+{
+	max_dma_handler(3);
+}
+
+void DMA4_IRQHandler()
+{
+	max_dma_handler(4);
+}
+
+void DMA5_IRQHandler()
+{
+	max_dma_handler(5);
+}
+
+void DMA6_IRQHandler()
+{
+	max_dma_handler(6);
+}
+
+void DMA7_IRQHandler()
+{
+	max_dma_handler(7);
+}
+
+void DMA8_IRQHandler()
+{
+	max_dma_handler(8);
+}
+
+void DMA9_IRQHandler()
+{
+	max_dma_handler(9);
+}
+
+void DMA10_IRQHandler()
+{
+	max_dma_handler(10);
+}
+
+void DMA11_IRQHandler()
+{
+	max_dma_handler(11);
+}
+
+void DMA12_IRQHandler()
+{
+	max_dma_handler(12);
+}
+
+void DMA13_IRQHandler()
+{
+	max_dma_handler(13);
+}
+
+void DMA14_IRQHandler()
+{
+	max_dma_handler(14);
+}
+
+void DMA15_IRQHandler()
+{
+	max_dma_handler(15);
+}
+
 void RTC_IRQHandler()
 {
 	int ret;
@@ -278,7 +390,6 @@ int32_t max_irq_ctrl_remove(struct no_os_irq_ctrl_desc *desc)
 		while (0 == no_os_list_get_first(_events[i].actions, &discard))
 			no_os_free(discard);
 		no_os_list_remove(_events[i].actions);
-		_events[i].actions = NULL;
 	}
 	no_os_free(desc);
 
@@ -389,6 +500,45 @@ int32_t max_irq_register_callback(struct no_os_irq_ctrl_desc *desc,
 	case NO_OS_TIM_IRQ:
 		if (_events[NO_OS_EVT_TIM_ELAPSED].actions == NULL) {
 			ret = no_os_list_init(&_events[NO_OS_EVT_TIM_ELAPSED].actions,
+					      NO_OS_LIST_PRIORITY_LIST,
+					      irq_action_cmp);
+			if (ret)
+				return ret;
+		}
+
+		ret = no_os_list_read_find(_events[callback_desc->event].actions,
+					   (void **)&action,
+					   &action_key);
+		/*
+		 * If an action with the same irq_id as the function parameter does not exists, insert a new one,
+		 * otherwise update
+		 */
+		if (ret) {
+			action = no_os_calloc(1, sizeof(*action));
+			if (!action)
+				return -ENOMEM;
+
+			action->irq_id = irq_id;
+			action->handle = callback_desc->handle;
+			action->callback = callback_desc->callback;
+			action->ctx = callback_desc->ctx;
+
+			ret = no_os_list_add_last(_events[callback_desc->event].actions, action);
+			if (ret)
+				goto free_action;
+
+		} else {
+			action->irq_id = irq_id;
+			action->handle = callback_desc->handle;
+			action->callback = callback_desc->callback;
+			action->ctx = callback_desc->ctx;
+		}
+
+		break;
+	case NO_OS_SPI_DMA_IRQ:
+	case NO_OS_DMA_IRQ:
+		if (_events[callback_desc->event].actions == NULL) {
+			ret = no_os_list_init(&_events[callback_desc->event].actions,
 					      NO_OS_LIST_PRIORITY_LIST,
 					      irq_action_cmp);
 			if (ret)
