@@ -57,3 +57,10 @@ POWER MANAGEMENT
    :maxdepth: 1
 
    drivers/adp1050
+
+ANALOG-IO
+=========
+.. toctree::
+   :maxdepth: 1
+
+   drivers/max2201x
