@@ -175,12 +175,27 @@ int32_t ad400x_spi_single_conversion(struct ad400x_dev *dev,
 		return ret;
 
 #if defined(USE_STANDARD_SPI)
+	/*
+	 * In the case of HDL the format is little endian, the interesting
+	 * bits are: XXX43210
+	 *
+	 * In case of sandard SPI The buffer contains data big endian format
+	 * with the high nibble of the last bit containig the LSB:
+	 * So the intersing bits are: XX0X1234
+	 * 	where:
+	 *	4 is the MSB
+	 *	0 is the LSB
+	 *	X is dont care.
+	 */
+
 	ret = no_os_gpio_set_value(dev->gpio_cnv, 0);
 	if (ret)
 		return ret;
-#endif
-	*adc_data = buf & 0xFFFFF;
 
+	*adc_data = buf & 0xF0FFFF;
+#else
+	*adc_data = buf & 0xFFFFF;
+#endif
 	return ret;
 }
 
