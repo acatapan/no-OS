@@ -63,3 +63,10 @@ POWER MANAGEMENT
    :maxdepth: 1
 
    projects/adp1050
+
+ANALOG-IO
+=========
+.. toctree::
+   :maxdepth: 1
+
+   projects/max2201x
